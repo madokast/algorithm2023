@@ -1,7 +1,6 @@
 package main
 
 import (
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -11,9 +10,12 @@ type Node int // 节点
 
 // Children 获取子节点
 func (n Node) Children() []Node {
-	time.Sleep(1 * time.Millisecond)
+	s := 0
+	for i := 0; i < 10000; i++ {
+		s += i
+	}
 	if n > 0 {
-		c := make([]Node, 20)
+		c := make([]Node, 200+s%2)
 		for i := range c {
 			c[i] = Node(n - 1)
 		}
@@ -108,7 +110,7 @@ func search(root Node) int32 {
 	var mainCond = sync.NewCond(&sync.Mutex{}) // 主协程等待一个协程结束
 	var mainShouldWait = true                  // 主协程是否应该等待
 	var runningNumber atomic.Int32             // 正在往下搜索的协程数目。如果数目为0且栈为空，则说明搜索结束
-	var parallel = runtime.NumCPU() + 1        // 并发度
+	var parallel = 1                           // 并发度
 
 	var stack = newStack(parallel)
 	stack.push(root)
@@ -128,7 +130,10 @@ func search(root Node) int32 {
 				goto takeLoop
 			} else {
 				waitCond.L.Lock()
-				if runningNumber.Add(-1) == 0 && stack.empty() {
+				if runningNumber.Add(-1) == 0 {
+					if !stack.empty() {
+						panic("stack.empty()")
+					}
 					waitCond.L.Unlock()
 					waitCond.Signal() // 唤醒一个子协程
 					{
