@@ -1,6 +1,6 @@
-#include<stdlib.h>
-#include<string.h>
 #include<stdio.h>
+#include<string.h>
+#include <stdlib.h>
 
 #define Key int
 #define Value int
@@ -25,8 +25,8 @@ void m_init(iimap* m, int number) {
     }
     m->free = size;
     m->mask = size - 1;
-    m->data = (entry*)calloc(size + number, sizeof(entry));
-    // memset(m->data, 0, (size + number) * sizeof(entry));
+    m->data = (entry*)malloc((size + number) * sizeof(entry));
+    memset(m->data, 0, (size + number) * sizeof(entry));
 }
 
 void m_destory(iimap* m) {
@@ -147,25 +147,63 @@ void m_foreach(iimap* m, void (*fun)(Key k, Value v)) {
     }
 }
 
-void _foreach(Key k, Value v) {printf("%d->%d\n", k, v);}
 
-int main() {
-    iimap m;
-    m_init(&m, 10);
-    for (int i = 0; i < 20 ; ++i) m_direct_put(&m, i, i*100);
-    
-    Value* val = NULL;
-    for (Key i = 0; i <= 8; i++) {
-        m_get(&m, i, &val);
-        if (val != NULL) {
-            printf("find %d->%d\n", i, *val);
-            val = NULL;
-        } else {
-            printf("no key %d in map\n", i);
+int m = 0;
+iimap map;
+int outbitWord, outlength;
+void foreach_inner(int bitWord, int length) {
+    int t;
+    if ((outbitWord & bitWord) == 0) {
+        t = outlength * length;
+        if (t > m) m = t;
+    }
+}
+
+void foreach_outer(int bitWord, int length) {
+    outbitWord = bitWord;
+    outlength = length;
+    m_foreach(&map, foreach_inner);
+}
+
+int maxProduct(char ** words, int wordsSize) {
+    int* lengthValue;
+    char* word;
+    char c;
+    int bitWord, length;
+
+    m = 0;
+    m_init(&map, wordsSize);
+
+    for (int i = 0; i < wordsSize; ++i) {
+        word = words[i];
+        bitWord = 0;
+        while (1) {
+            c = *word;
+            if (c == '\0') break;
+            else bitWord |= (1 << (c - 'a'));
+            ++word;
+        }
+        length = word - words[i];
+
+        lengthValue = NULL;
+        m_get(&map, bitWord, &lengthValue);
+        if (lengthValue == NULL) {
+            m_direct_put(&map, bitWord, length);
+        } else if (length > *lengthValue) {
+            m_put(&map, bitWord, length);
         }
     }
 
-    m_foreach(&m, _foreach);
+    m_foreach(&map, foreach_outer);
+    return m;
+}
 
-    m_destory(&m);
+int main() {
+    char* words[] = {"ccd","accaceddeeeaefc","bcaffa","bbcfafbb","accacfebbabbeedfbfdb","beddecbffcdaededdaefdedfdea","cf","ddafdcbd","bbafacebacaefdaffccebddff","ebccffcddbeddccacceccaec","becfbfdccdfdeadfbfaddbcded","cbabeaaeabefedbaeaedc","dfadbbdbead","cafaefdcd","eccdbfceafeeeacfcddc","dbabbcdbb","abfbfbffcbebde","cfaadaa","fc","faebcabb","adbacebabcaaccbdeaffff","aeaefccf","dbacbeeabdbcdfccabebaecfef","ecdadeefcaddffaececffa","defcabf","abbcecbccbdaebaecaefabed","dfeeebcbaaefc","aecccbcbbdddb","dcfabacec","fccfbacbacddeaaea","dfdbfacbacbecb","cbfeebdbfecb","cffaacacbde","aafd","bdcebbbebd","afeffadcfcdacfba","dafeefbcdfaffcfacee","dcbbebfbedafedcdbab","cafaf","bcbcccfdebdd","efaaaacccff","cffbead","ebcfccfcddffdec","fffdfdcec","beeafefbdfa","cdfdbccfbaaeffcabab","ddadcbabbcb","decfaeabbecebaebeaddedae","cdcbfffbebae","aeccefcbcbbddfdc","ffefedaf","cddbabccafaffeafeedcbedbdad","eddeeccfedcefadfdfebfacb","aca","ffdcafaddcddf","ef","bbbbffe","ffccfebabaadcffacbbb","cbdeddfddffacbeeeebafebabda","ddeecb","cffdc","edcffcebadf","becbcadcafddcfbbeeddbfffcab","abcbaceeaeaddd","cfeffceebfaeefadaaccfa","eaccddb","caeafbfafecd","becaafdbaadbfecfdfde","ecabaaeafbfbcbadaac","bdcdffcfaeebeedfdfddfaf","dbbfbaeecbfcdebad","cceecddeeecdbde","beec","adbcfdbfdbccdcffffbcffbec","bbbbfe","cdaedaeaad","dadbfeafadd","fcacaaebcedfbfbcddfc","ceecfedceac","dada","ccfdaeffbcfcc","eadddbbbdfa","beb","fcaaedadabbbeacabefdabe","dfcddeeffbeec","defbdbeffebfceaedffbfee","cffadadfbaebfdbadebc","fbbadfccbeffbdeabecc","bdabbffeefeccb","bdeeddc","afcbacdeefbcecff","cfeaebbbadacbced","edfddfedbcfecfedb","faed","cbcdccfcbdebabc","efb","dbddadfcddbd","fbaefdfebeeacbdfbdcdddcbefc","cbbfaccdbffde","adbcabaffebdffad"};
+    printf("%d\n", maxProduct(words, sizeof(words)/sizeof(char*)));
+
+    // int a = 1, b = 2;
+    // printf("a & b = %d\n", a & b);
+    // printf("a & b == 0 = %d\n", (a & b) == 0);
+    // printf("!(a & b) %d\n", !(a & b));
 }
