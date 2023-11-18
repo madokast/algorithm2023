@@ -1,6 +1,4 @@
 #include<stdlib.h>
-#include<string.h>
-#include<stdio.h>
 
 #define Key int
 #define Value int
@@ -147,7 +145,27 @@ void m_foreach(iimap* m, void (*fun)(Key k, Value v)) {
     }
 }
 
+void m_foreach_ctx(iimap* m, void* context, void (*fun)(Key k, Value v, void* context)) {
+    entry* e;
+    int nx;
+    for (int i = 0; i <= m->mask; ++i) {
+        e = m->data + i;
+        nx = e->next;
+        if (nx != 0) {
+            fun(e->key, e->value, context);
+            while (nx != -1) {
+                e = m->data + nx;
+                fun(e->key, e->value, context);
+                nx = e->next;
+            }
+        }
+    }
+}
+
+#include<stdio.h>
+
 void _foreach(Key k, Value v) {printf("%d->%d\n", k, v);}
+void _sumkey(Key k, Value v, void* ctx) {*((int*)(ctx))+=k;}
 
 int main() {
     iimap m;
@@ -166,6 +184,10 @@ int main() {
     }
 
     m_foreach(&m, _foreach);
+
+    int sum = 0;
+    m_foreach_ctx(&m, &sum, _sumkey);
+    printf("sum key = %d\n", sum);
 
     m_destory(&m);
 }
